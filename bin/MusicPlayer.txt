@@ -1,0 +1,61 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class MusicPlayer {
+    
+    public static void main(String[] args) {
+        List<String> musicList = new ArrayList<String>();
+        musicList.add("Bachata");
+        musicList.add("Cumbia");
+        musicList.add("Techno");
+        musicList.add("Salsa");
+        musicList.add("Reggaeton");
+        musicList.add("Pop");
+        long startTime = System.currentTimeMillis();
+        // Dividir la lista en subconjuntos
+        int numThreads = 3; // número de hilos a utilizar
+        int sublistSize = musicList.size() / numThreads; // tamaño de cada sublista
+        List<List<String>> sublists = new ArrayList<List<String>>();
+        for (int i = 0; i < numThreads - 1; i++) {
+            sublists.add(musicList.subList(i * sublistSize, (i + 1) * sublistSize));
+        }
+        sublists.add(musicList.subList((numThreads - 1) * sublistSize, musicList.size()));
+
+        // Ejecutar el procesamiento en paralelo
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        List<Callable<List<String>>> tasks = new ArrayList<Callable<List<String>>>();
+        for (final List<String> sublist : sublists) {
+            tasks.add(new Callable<List<String>>() {
+                public List<String> call() throws Exception {
+                    List<String> result = new ArrayList<String>();
+                    for (String music : sublist) {
+                        // Procesar cada música aquí (por ejemplo, reproducirla)
+                        result.add(music);
+                    }
+                    return result;
+                }
+            });
+        }
+        try {
+            List<Future<List<String>>> results = executorService.invokeAll(tasks);
+            executorService.shutdown();
+            List<String> musicResults = new ArrayList<String>();
+            for (Future<List<String>> result : results) {
+                musicResults.addAll(result.get());
+            }
+            // Mostrar las músicas procesadas en orden
+            for (String music : musicResults) {
+                System.out.println(music);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+        System.out.println("Total time elapsed: " + elapsedTime + "ms");
+    }
+}
